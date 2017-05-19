@@ -36,6 +36,7 @@ import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
+import com.google.android.exoplayer2.source.dash.manifest.DashManifest;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
@@ -51,7 +52,6 @@ import com.google.android.exoplayer2.util.Util;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.lang.Math;
 
 @SuppressLint("ViewConstructor")
 class ReactExoplayerView extends FrameLayout implements
@@ -96,6 +96,9 @@ class ReactExoplayerView extends FrameLayout implements
     private boolean disableFocus;
     private float mProgressUpdateInterval = 250.0f;
     private boolean playInBackground = false;
+    private long mFirstWindowStartMS = -1L;
+    private Timeline.Window mWindow;
+    private long mWindowOffsetMS = 0L;
     // \ End props
 
     // React
@@ -108,12 +111,14 @@ class ReactExoplayerView extends FrameLayout implements
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case SHOW_PROGRESS:
-                    if (player != null
-                            && player.getPlaybackState() == ExoPlayer.STATE_READY
-                            && player.getPlayWhenReady()
-                            ) {
-                        long pos = player.getCurrentPosition();
-                        eventEmitter.progressChanged(pos, player.getBufferedPercentage(), player.getDuration());
+                    if (player != null && player.getPlaybackState() == ExoPlayer.STATE_READY &&
+                        player.getPlayWhenReady()) {
+                        final long pos = player.getCurrentPosition();
+                        eventEmitter.progressChanged(
+                            pos,
+                            player.getBufferedPercentage(),
+                            player.getDuration(),
+                            getWindowOffsetMS());
                         msg = obtainMessage(SHOW_PROGRESS);
                         sendMessageDelayed(msg, Math.round(mProgressUpdateInterval));
                     }
@@ -466,7 +471,18 @@ class ReactExoplayerView extends FrameLayout implements
 
     @Override
     public void onTimelineChanged(Timeline timeline, Object manifest) {
-        // Do nothing.
+        if (manifest instanceof DashManifest) {
+            if (mWindow == null) {
+                mWindow = new Timeline.Window();
+            }
+            mWindow = timeline.getWindow(player.getCurrentWindowIndex(), mWindow);
+            if (mFirstWindowStartMS < 0) {
+                mFirstWindowStartMS = mWindow.windowStartTimeMs;
+                setWindowOffset(0);
+            } else {
+                setWindowOffset(mWindow.windowStartTimeMs - mFirstWindowStartMS);
+            }
+        }
     }
 
     @Override
@@ -539,6 +555,8 @@ class ReactExoplayerView extends FrameLayout implements
 
     public void setSrc(final Uri uri, final String extension) {
         if (uri != null) {
+            setWindowOffset(0);
+            mFirstWindowStartMS = -1L;
             boolean isOriginalSourceNull = srcUri == null;
             boolean isSourceEqual = uri.equals(srcUri);
 
@@ -558,6 +576,8 @@ class ReactExoplayerView extends FrameLayout implements
 
     public void setRawSrc(final Uri uri, final String extension) {
         if (uri != null) {
+            setWindowOffset(0);
+            mFirstWindowStartMS = -1L;
             boolean isOriginalSourceNull = srcUri == null;
             boolean isSourceEqual = uri.equals(srcUri);
 
@@ -632,4 +652,14 @@ class ReactExoplayerView extends FrameLayout implements
     public void setDisableFocus(boolean disableFocus) {
         this.disableFocus = disableFocus;
     }
+
+    private void setWindowOffset(final long windowOffset) {
+        mWindowOffsetMS = windowOffset;
+    }
+
+
+    private long getWindowOffsetMS() {
+        return mWindowOffsetMS;
+    }
+
 }

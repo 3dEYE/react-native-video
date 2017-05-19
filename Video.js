@@ -283,6 +283,7 @@ Video.propTypes = {
   disableFocus: PropTypes.bool,
   controls: PropTypes.bool,
   currentTime: PropTypes.number,
+  windowOffset: PropTypes.number,
   progressUpdateInterval: PropTypes.number,
   onLoadStart: PropTypes.func,
   onLoad: PropTypes.func,

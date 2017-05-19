@@ -23,7 +23,8 @@ class VideoPlayer extends Component {
     resizeMode: 'contain',
     duration: 0.0,
     currentTime: 0.0,
-    paused: true,
+    paused: false,
+    windowOffset:0.0
   };
 
   video: Video;
@@ -33,7 +34,7 @@ class VideoPlayer extends Component {
   };
 
   onProgress = (data) => {
-    this.setState({ currentTime: data.currentTime });
+    this.setState({ currentTime: data.currentTime, windowOffset: data.windowOffset });   
   };
 
   onEnd = () => {
@@ -51,7 +52,7 @@ class VideoPlayer extends Component {
 
   getCurrentTimePercentage() {
     if (this.state.currentTime > 0) {
-      return parseFloat(this.state.currentTime) / parseFloat(this.state.duration);
+      return parseFloat(this.state.currentTime + this.state.windowOffset) / parseFloat(this.state.duration);
     }
     return 0;
   };
