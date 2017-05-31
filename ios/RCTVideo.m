@@ -199,6 +199,7 @@ static NSString *const timedMetadata = @"timedMetadata";
                              @"atTimescale": [NSNumber numberWithInt:currentTime.timescale],
                              @"target": self.reactTag,
                              @"seekableDuration": [self calculateSeekableDuration],
+                             @"seekStart": [NSNumber numberWithFloat:CMTimeGetSeconds([self playerItemSeekableTimeRange].start)]
                             });
    }
 }
@@ -395,6 +396,8 @@ static NSString *const timedMetadata = @"timedMetadata";
 
       if(self.onVideoLoad) {
           self.onVideoLoad(@{@"duration": [NSNumber numberWithFloat:duration],
+                             @"seekableDuration": [NSNumber numberWithFloat:CMTimeGetSeconds([self playerItemSeekableTimeRange].duration)],
+                             @"seekStart": [NSNumber numberWithFloat:CMTimeGetSeconds([self playerItemSeekableTimeRange].start)],
                              @"currentTime": [NSNumber numberWithFloat:CMTimeGetSeconds(_playerItem.currentTime)],
                              @"canPlayReverse": [NSNumber numberWithBool:_playerItem.canPlayReverse],
                              @"canPlayFastForward": [NSNumber numberWithBool:_playerItem.canPlayFastForward],
