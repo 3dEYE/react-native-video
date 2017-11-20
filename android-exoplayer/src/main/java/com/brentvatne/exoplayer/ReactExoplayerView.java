@@ -87,6 +87,7 @@ class ReactExoplayerView extends FrameLayout implements
     private boolean loadVideoStarted;
     private boolean isPaused = true;
     private boolean isBuffering;
+    private boolean isMuted = false;
     private float rate = 1f;
 
     // Props from React
@@ -406,6 +407,8 @@ class ReactExoplayerView extends FrameLayout implements
         String text = "onStateChanged: playWhenReady=" + playWhenReady + ", playbackState=";
         switch (playbackState) {
             case ExoPlayer.STATE_IDLE:
+                // TODO: find out why initial setMutedModifier has no effect, fix and remove that line
+                setMutedModifier(isMuted);
                 text += "idle";
                 eventEmitter.idle();
                 break;
@@ -616,6 +619,7 @@ class ReactExoplayerView extends FrameLayout implements
     }
 
     public void setMutedModifier(boolean muted) {
+        isMuted = muted;
         if (player != null) {
             player.setVolume(muted ? 0 : 1);
         }
