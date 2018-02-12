@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import {StyleSheet, requireNativeComponent, NativeModules, View, ViewPropTypes, Image} from 'react-native';
+import {StyleSheet, requireNativeComponent, NativeModules, View, ViewPropTypes, Image, Platform} from 'react-native';
 import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
 import VideoResizeMode from './VideoResizeMode.js';
 
@@ -182,7 +182,7 @@ export default class Video extends Component {
     const nativeProps = Object.assign({}, this.props);
     Object.assign(nativeProps, {
       style: [styles.base, nativeProps.style],
-      resizeMode: nativeResizeMode,
+	  resizeMode: nativeResizeMode,
       src: {
         uri,
         isNetwork,
@@ -190,7 +190,12 @@ export default class Video extends Component {
         type: source.type || '',
         mainVer: source.mainVer || 0,
         patchVer: source.patchVer || 0,
-      },
+	  },
+	  zoom: {
+		scale: Platform.select({ ios: nativeProps.scale, android: nativeProps.scale + '' }),
+		x: Platform.select({ ios: nativeProps.x, android: nativeProps.x + '' }),
+		y: Platform.select({ ios: nativeProps.y, android: nativeProps.y + '' }),
+	  },
       onVideoLoadStart: this._onLoadStart,
       onVideoLoad: this._onLoad,
       onVideoError: this._onError,
@@ -277,6 +282,7 @@ Video.propTypes = {
   muted: PropTypes.bool,
   volume: PropTypes.number,
   rate: PropTypes.number,
+  zoom: PropTypes.object,
   playInBackground: PropTypes.bool,
   playWhenInactive: PropTypes.bool,
   ignoreSilentSwitch: PropTypes.oneOf(['ignore', 'obey']),
