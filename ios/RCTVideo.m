@@ -37,9 +37,6 @@ static NSString *const timedMetadata = @"timedMetadata";
   /* Keep track of any modifiers, need to be applied after each play */
   float _volume;
   float _rate;
-  float _scale;
-  float _x;
-  float _y;
   BOOL _muted;
   BOOL _paused;
   BOOL _repeat;
@@ -61,7 +58,6 @@ static NSString *const timedMetadata = @"timedMetadata";
     _playbackStalled = NO;
     _rate = 1.0;
     _volume = 1.0;
-    _scale = 1.0;
     _resizeMode = @"AVLayerVideoGravityResizeAspectFill";
     _pendingSeek = false;
     _pendingSeekTime = 0.0f;
@@ -733,41 +729,6 @@ static NSString *const timedMetadata = @"timedMetadata";
   _progressUpdateInterval = progressUpdateInterval;
 }
 
-- (void)setZoom:(NSDictionary *)zoom
-{
-    float scale = [RCTConvert float:[zoom objectForKey:@"scale"]];
-    float x = [RCTConvert float:[zoom objectForKey:@"x"]];
-    float y = [RCTConvert float:[zoom objectForKey:@"y"]];
-    
-    CGRect newframe = CGRectMake(
-         self.bounds.origin.x + x,
-         self.bounds.origin.y + y,
-         ceil(self.bounds.size.width * scale),
-         ceil(self.bounds.size.height * scale)
-    );
-    _x = x;
-    _y = y;
-    
-    // TODO: handle _controls
-    if (scale != _scale) {
-        [UIView animateWithDuration:.5 delay:0.0 options:UIViewAnimationOptionCurveEaseIn animations:^{
-            // TODO: if _controls
-            _playerLayer.frame = newframe;
-        } completion:^(BOOL finished) {
-            
-        }];
-    }
-    else
-    {
-        [CATransaction begin];
-        [CATransaction setAnimationDuration:0];
-        _playerLayer.frame = newframe;
-        [CATransaction commit];
-    }
-    
-    _scale = scale;
-}
-
 - (void)removePlayerLayer
 {
     [_playerLayer removeFromSuperlayer];
@@ -838,7 +799,6 @@ static NSString *const timedMetadata = @"timedMetadata";
 - (void)layoutSubviews
 {
   [super layoutSubviews];
-
   if( _controls )
   {
     _playerViewController.view.frame = self.bounds;
@@ -850,15 +810,9 @@ static NSString *const timedMetadata = @"timedMetadata";
   }
   else
   {
-      CGRect newframe = CGRectMake(
-        self.bounds.origin.x + _x,
-        self.bounds.origin.y + _y,
-        ceil(self.bounds.size.width * _scale),
-        ceil(self.bounds.size.height * _scale)
-      );
       [CATransaction begin];
       [CATransaction setAnimationDuration:0];
-      _playerLayer.frame = newframe;
+      _playerLayer.frame = self.bounds;
       [CATransaction commit];
   }
 }
