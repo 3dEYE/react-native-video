@@ -97,9 +97,8 @@ class ReactExoplayerView extends FrameLayout implements
     private boolean disableFocus;
     private float mProgressUpdateInterval = 250.0f;
     private boolean playInBackground = false;
-    private long mFirstWindowStartMS = -1L;
     private Timeline.Window mWindow;
-    private long mWindowOffsetMS = 0L;
+    private long windowStartTimeMs = 0L;
     // \ End props
 
     // React
@@ -114,12 +113,14 @@ class ReactExoplayerView extends FrameLayout implements
                 case SHOW_PROGRESS:
                     if (player != null && player.getPlaybackState() == ExoPlayer.STATE_READY &&
                         player.getPlayWhenReady()) {
+
                         final long pos = player.getCurrentPosition();
                         eventEmitter.progressChanged(
                             pos,
                             player.getBufferedPercentage(),
                             player.getDuration(),
-                            getWindowOffsetMS());
+                            getWindowStartTime()
+                        );
                         msg = obtainMessage(SHOW_PROGRESS);
                         sendMessageDelayed(msg, Math.round(mProgressUpdateInterval));
                     }
@@ -475,16 +476,15 @@ class ReactExoplayerView extends FrameLayout implements
     @Override
     public void onTimelineChanged(Timeline timeline, Object manifest) {
         if (manifest instanceof DashManifest) {
+            //windowStartTimeMs = ((DashManifest) manifest).windowStartTimeMs;
             if (mWindow == null) {
                 mWindow = new Timeline.Window();
             }
             mWindow = timeline.getWindow(player.getCurrentWindowIndex(), mWindow);
-            if (mFirstWindowStartMS < 0) {
-                mFirstWindowStartMS = mWindow.windowStartTimeMs;
-                setWindowOffset(0);
-            } else {
-                setWindowOffset(mWindow.windowStartTimeMs - mFirstWindowStartMS);
-            }
+
+            windowStartTimeMs = mWindow.windowStartTimeMs;
+
+            setWindowStartTime(mWindow.windowStartTimeMs);
         }
     }
 
@@ -558,8 +558,7 @@ class ReactExoplayerView extends FrameLayout implements
 
     public void setSrc(final Uri uri, final String extension) {
         if (uri != null) {
-            setWindowOffset(0);
-            mFirstWindowStartMS = -1L;
+            setWindowStartTime(0);
             boolean isOriginalSourceNull = srcUri == null;
             boolean isSourceEqual = uri.equals(srcUri);
 
@@ -579,8 +578,7 @@ class ReactExoplayerView extends FrameLayout implements
 
     public void setRawSrc(final Uri uri, final String extension) {
         if (uri != null) {
-            setWindowOffset(0);
-            mFirstWindowStartMS = -1L;
+            setWindowStartTime(0);
             boolean isOriginalSourceNull = srcUri == null;
             boolean isSourceEqual = uri.equals(srcUri);
 
@@ -657,13 +655,13 @@ class ReactExoplayerView extends FrameLayout implements
         this.disableFocus = disableFocus;
     }
 
-    private void setWindowOffset(final long windowOffset) {
-        mWindowOffsetMS = windowOffset;
+    private void setWindowStartTime(final long startTime) {
+        windowStartTimeMs = startTime;
     }
 
 
-    private long getWindowOffsetMS() {
-        return mWindowOffsetMS;
+    private long getWindowStartTime() {
+        return windowStartTimeMs;
     }
 
 }
