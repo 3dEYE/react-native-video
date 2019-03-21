@@ -49,6 +49,7 @@ import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.TrackGroup;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
+import com.google.android.exoplayer2.source.dash.manifest.DashManifest;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
@@ -127,6 +128,9 @@ class ReactExoplayerView extends FrameLayout implements
     private int bufferForPlaybackMs = DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS;
     private int bufferForPlaybackAfterRebufferMs = DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS;
 
+    private Timeline.Window mWindow;
+    private long windowStartTimeMs = 0L;
+
     // Props from React
     private Uri srcUri;
     private String extension;
@@ -162,7 +166,7 @@ class ReactExoplayerView extends FrameLayout implements
                             ) {
                         long pos = player.getCurrentPosition();
                         long bufferedDuration = player.getBufferedPercentage() * player.getDuration() / 100;
-                        eventEmitter.progressChanged(pos, bufferedDuration, player.getDuration());
+                        eventEmitter.progressChanged(pos, bufferedDuration, player.getDuration(), getWindowStartTime());
                         msg = obtainMessage(SHOW_PROGRESS);
                         sendMessageDelayed(msg, Math.round(mProgressUpdateInterval));
                     }
@@ -739,7 +743,14 @@ class ReactExoplayerView extends FrameLayout implements
 
     @Override
     public void onTimelineChanged(Timeline timeline, Object manifest, int reason) {
-        // Do nothing.
+        if (manifest instanceof DashManifest) {
+            if (mWindow == null) {
+                mWindow = new Timeline.Window();
+            }
+            mWindow = timeline.getWindow(player.getCurrentWindowIndex(), mWindow);
+
+            setWindowStartTime(mWindow.windowStartTimeMs);
+        }
     }
 
     @Override
@@ -843,6 +854,7 @@ class ReactExoplayerView extends FrameLayout implements
 
     public void setSrc(final Uri uri, final String extension, Map<String, String> headers) {
         if (uri != null) {
+            setWindowStartTime(0);
             boolean isOriginalSourceNull = srcUri == null;
             boolean isSourceEqual = uri.equals(srcUri);
 
@@ -867,6 +879,7 @@ class ReactExoplayerView extends FrameLayout implements
 
     public void setRawSrc(final Uri uri, final String extension) {
         if (uri != null) {
+            setWindowStartTime(0);
             boolean isOriginalSourceNull = srcUri == null;
             boolean isSourceEqual = uri.equals(srcUri);
 
@@ -1160,5 +1173,13 @@ class ReactExoplayerView extends FrameLayout implements
         } else if (getChildAt(1) instanceof PlayerControlView && exoPlayerView != null) {
             removeViewAt(1);
         }
+    }
+
+    private void setWindowStartTime(final long startTime) {
+        windowStartTimeMs = startTime;
+    }
+
+    private long getWindowStartTime() {
+        return windowStartTimeMs;
     }
 }

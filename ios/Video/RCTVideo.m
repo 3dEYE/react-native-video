@@ -273,6 +273,7 @@ static int const RCTVideoUnset = -1;
                            @"atTimescale": [NSNumber numberWithInt:currentTime.timescale],
                            @"target": self.reactTag,
                            @"seekableDuration": [self calculateSeekableDuration],
+                           @"seekStart": [NSNumber numberWithFloat:CMTimeGetSeconds([self playerItemSeekableTimeRange].start)]
                            });
   }
 }
@@ -654,6 +655,8 @@ static int const RCTVideoUnset = -1;
         
         if (self.onVideoLoad && _videoLoadStarted) {
           self.onVideoLoad(@{@"duration": [NSNumber numberWithFloat:duration],
+                             @"seekableDuration": [NSNumber numberWithFloat:CMTimeGetSeconds([self playerItemSeekableTimeRange].duration)],
+                             @"seekStart": [NSNumber numberWithFloat:CMTimeGetSeconds([self playerItemSeekableTimeRange].start)],
                              @"currentTime": [NSNumber numberWithFloat:CMTimeGetSeconds(_playerItem.currentTime)],
                              @"canPlayReverse": [NSNumber numberWithBool:_playerItem.canPlayReverse],
                              @"canPlayFastForward": [NSNumber numberWithBool:_playerItem.canPlayFastForward],
